@@ -1,28 +1,28 @@
 use std::io;
-use std::iter;
 use std::usize;
-
-const GAME_LIST: [&'static str; 2] = ["Tic Tac Toe", "Chess"];
 
 fn main() {
     println!("Welcome, what game do you wish to play now?");
-    for (index, game) in GAME_LIST.iter().enumerate() {
+    let game_list = ["Tic Tac Toe", "Chess"];
+    for (index, game) in game_list.iter().enumerate() {
         println!("for {game} press {index}");
     }
-    let mut game_chosen = String::new();
+    let mut self_chosen = String::new();
     io::stdin()
-        .read_line(&mut game_chosen)
+        .read_line(&mut self_chosen)
         .expect("Failed to read line");
-    let val_check: i8 = game_chosen.trim().parse().expect("Should pass number");
+    let val_check: i8 = self_chosen.trim().parse().expect("Should pass number");
     match val_check {
         0 => {
             println!("Tic Tac Toe");
         }
         1 => {
             println!("Not yet avalaible, coming soon");
+            return;
         }
         _ => {
-            println!("You lost");
+            println!("You already lost");
+            return;
         }
     };
 }
@@ -51,7 +51,7 @@ impl TicTacToe {
         }
     }
 
-    fn map_play(play: &str) -> (usize, usize) {
+    fn map_play(play: &str) -> Play {
         let (l, n) = play.split_at(1);
         let (mapped_l, mapped_n): (usize, usize);
         match l {
@@ -65,7 +65,7 @@ impl TicTacToe {
                 mapped_l = 2;
             }
             _ => {
-                mapped_l = 999;
+                mapped_l = 99;
             }
         };
         match n {
@@ -79,15 +79,15 @@ impl TicTacToe {
                 mapped_n = 2;
             }
             _ => {
-                mapped_n = 999;
+                mapped_n = 99;
             }
         };
-        (mapped_l, mapped_n)
+        Play::new(mapped_l, mapped_n)
     }
 
-    fn check_play(game: &mut TicTacToe, player: i8, l: usize, c: usize) -> bool {
-        if game.quadrants[game.dimensions * l + c] == 0 {
-            game.quadrants[game.dimensions * l + c] = player;
+    fn check_play(&mut self, player: i8, play: &Play) -> bool {
+        if self.quadrants[self.dimensions * play.l + play.c] == 0 {
+            self.quadrants[self.dimensions * play.l + play.c] = player;
             return true;
         }
         false
@@ -108,50 +108,79 @@ impl TicTacToe {
             check all in main diagonal
             check all in secondary diagonal
     */
-    fn check_if_win(game: &TicTacToe, play: &Play, player: i8) -> bool {
+    fn check_if_win(&self, play: &Play, player: i8) -> bool {
         let mut counter: i8 = 0;
-        let mut tmp_j: usize = game.dimensions;
+        let mut tmp_j: usize = self.dimensions;
 
         // First, check if it's true on the secondary diagonal
-        if play.l + play.c == game.dimensions {
-            for i in 0..game.dimensions {
-                counter += game.quadrants[game.dimensions * i + tmp_j];
+        if play.l + play.c == self.dimensions {
+            for i in 0..self.dimensions {
+                counter += self.quadrants[self.dimensions * i + tmp_j];
                 tmp_j -= tmp_j;
             }
-            if counter == player * (game.dimensions as i8 + 1) {
+            if counter == player * (self.dimensions as i8 + 1) {
                 return true;
             }
             counter = 0;
         }
 
         // Check if it's true on the main diagonal
-        if play.l + play.c == game.dimensions {
-            for i in 0..game.dimensions {
-                counter += game.quadrants[game.dimensions * i + i];
+        if play.l + play.c == self.dimensions {
+            for i in 0..self.dimensions {
+                counter += self.quadrants[self.dimensions * i + i];
             }
-            if counter == player * (game.dimensions as i8 + 1) {
+            if counter == player * (self.dimensions as i8 + 1) {
                 return true;
             }
             counter = 0;
         }
 
         // Check if it's true on the same line
-        for i in 0..game.dimensions {
-            counter += game.quadrants[game.dimensions * play.l + i];
+        for i in 0..self.dimensions {
+            counter += self.quadrants[self.dimensions * play.l + i];
         }
-        if counter == player * (game.dimensions as i8 + 1) {
+        if counter == player * (self.dimensions as i8 + 1) {
             return true;
         }
         counter = 0;
 
         // Check if it's true on the same column
-        for i in 0..game.dimensions {
-            counter += game.quadrants[game.dimensions * i + play.c];
+        for i in 0..self.dimensions {
+            counter += self.quadrants[self.dimensions * i + play.c];
         }
-        if counter == player * (game.dimensions as i8 + 1) {
+        if counter == player * (self.dimensions as i8 + 1) {
             return true;
         }
 
         false
+    }
+
+    fn next_player(player: i8) -> &'static str {
+        match player {
+            1 => "X",
+            -1 => "O",
+            0 => " ",
+            _ => " ",
+        }
+    }
+    /*
+
+    1 |X|X|X|
+    2 |X|X|X|
+    3 |X|X|X|
+       A B C
+    */
+    fn draw_game(&self, player: i8) {
+        let mut draw_str: String = "1 | | | |\n
+                                    2 | | | |\n
+                                    3 | | | |\n   
+                                       A B C"
+            .to_string();
+        for (i, p) in self.quadrants.iter().enumerate() {
+            draw_str.replace_range(i + 3..i + 4, Self::next_player(*p));
+        }
+        println!("Tic! Tac! Toe!");
+        println!("Next player is: {}\n", Self::next_player(player));
+        print!("{}", draw_str);
     }
 }
